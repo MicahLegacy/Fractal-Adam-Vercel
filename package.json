@@ -1,0 +1,22 @@
+{
+  "name": "fractal-adam-api",
+  "type": "module",
+  "scripts": {
+    "embed": "node embed_all.mjs",
+    "dev": "nodemon index.mjs",
+    "ingest": "node e.g.ingest.js",
+    "start": "node index.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.51.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "langchain": "^0.0.146",
+    "marked": "^16.0.0",
+    "openai": "^5.9.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
