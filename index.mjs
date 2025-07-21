@@ -7,11 +7,6 @@ import { Configuration, OpenAIApi } from 'openai';
 import fs from 'fs/promises';
 import path from 'path';
 
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-const openai = new OpenAIApi(configuration);
-
 // Load embedded knowledge base
 const knowledgeBaseDir = './texts';
 let embeddedTexts = [];
@@ -34,7 +29,11 @@ async function loadKnowledgeBase() {
 await loadKnowledgeBase();
 
 // 🧠 Exported function for Vercel API
-export default async function runFractalAdam(userInput) {
+export default async function runFractalAdam(userInput, env) {
+  const openai = new OpenAIApi(
+    new Configuration({ apiKey: env.OPENAI_API_KEY })
+  );
+
   if (!userInput || typeof userInput !== 'string') {
     return { response: 'Invalid input received.' };
   }
@@ -49,7 +48,6 @@ export default async function runFractalAdam(userInput) {
     ? `Relevant thinkers:\n- ${scholars.join('\n- ')}\n\n`
     : '';
 
-  // Construct context from embedded texts (naively include all for now)
   const knowledgeDump = embeddedTexts.map(t => `### ${t.title}\n${t.content}`).join('\n\n');
 
   const systemPrompt = `
@@ -78,6 +76,13 @@ ${knowledgeDump}
     max_tokens: 1000,
   });
 
-  const finalOutput = completion.data.choices[0].message.content.trim();
+  const finalOutput = completion?.data?.choices?.[0]?.message?.content?.trim();
+
+  if (!finalOutput) {
+    console.error('[FractalAdam ERROR] No output from OpenAI.');
+    return { response: '⚠️ Fractal Adam failed to reflect. No response from AI.' };
+  }
+
   return { response: finalOutput };
 }
+
