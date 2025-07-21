@@ -5,10 +5,16 @@ export default async function handler(req, res) {
 
   try {
     const { default: runFractalAdam } = await import('../../index.mjs');
-    const result = await runFractalAdam(req.body.userInput);
+
+    const result = await runFractalAdam(req.body.userInput, {
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+      SUPABASE_URL: process.env.SUPABASE_URL,
+      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY
+    });
+
     res.status(200).json(result);
   } catch (err) {
-    console.error('Fractal Adam error:', err);
+    console.error('[API ERROR] Fractal Adam reflect route:', err);
     res.status(500).json({ error: 'Internal server error.' });
   }
 }
