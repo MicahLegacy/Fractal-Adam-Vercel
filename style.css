@@ -88,7 +88,11 @@ body {
   outline: none;
   margin-right: 10px;
 }
-
+#user-input {
+  width: 80%;
+  padding: 12px;
+  font-size: 16px:
+}
 /* Reflect Button */
 #reflect-button {
   background-color: #ffcc66;
