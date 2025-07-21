@@ -30,9 +30,14 @@ await loadKnowledgeBase();
 
 // 🧠 Exported function for Vercel API
 export default async function runFractalAdam(userInput, env) {
-  const openai = new OpenAIApi(
-    new Configuration({ apiKey: env.OPENAI_API_KEY })
-  );
+  const configuration = new Configuration({
+    apiKey: env.OPENAI_API_KEY,
+    console.log('[DEBUG] env keys received:', Object.keys(env));
+  });
+
+  const openai = new OpenAIApi(configuration);
+const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
+}
 
   if (!userInput || typeof userInput !== 'string') {
     return { response: 'Invalid input received.' };
