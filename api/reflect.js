@@ -39,7 +39,7 @@ The user's message is:
     `.trim();
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-4o',
       messages: [
         { role: 'system', content: promptContext },
       ],
@@ -51,7 +51,7 @@ The user's message is:
     return res.status(200).json({ response: response || 'No response generated.' });
   } catch (err) {
     console.error('[Reflect Error]', err.message || err);
-    return new Response(JSON.stingify({error: 'No Response Generated' }), {
+    return new Response(JSON.stringify({error: 'No Response Generated' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
