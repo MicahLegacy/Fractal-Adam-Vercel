@@ -51,9 +51,7 @@ The user's message is:
     return res.status(200).json({ response: response || 'No response generated.' });
   } catch (err) {
     console.error('[Reflect Error]', err.message || err);
-    return new Response(JSON.stringify({error: 'No Response Generated' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
+   return res.status(500).json({ error: 'Internal server error.' })
     });
                 
 }
