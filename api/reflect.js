@@ -26,7 +26,7 @@ export default async function handler(req, res) {
     const embedding = await generateEmbedding(userInput);
 
     console.log('[Reflect] Querying Supabase...');
-    const { data: matches, error: matchError } = await supabase.rpc('match_text', {
+    const { data: matches, error: matchError } = await supabase.rpc('match_documents', {
       query_embedding: embedding,
       match_threshold: 0.75,
       match_count: 12,
