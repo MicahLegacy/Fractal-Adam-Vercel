@@ -1,3 +1,4 @@
+// public/script.mjs
 document.getElementById('reflect-button').addEventListener('click', async () => {
   console.log('[DEBUG] Reflect button clicked');
 
@@ -28,15 +29,15 @@ document.getElementById('reflect-button').addEventListener('click', async () => 
     });
 
     if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Server returned ${res.status}: ${text}`);
+      const errorText = await res.text();
+      throw new Error(`Server returned ${res.status}: ${errorText}`);
     }
 
     const data = await res.json();
     console.log('[DEBUG] Received response:', data);
 
     aiDiv.classList.remove('loading');
-    aiDiv.innerHTML = marked.parse(data.response);
+    aiDiv.innerHTML = marked.parse(data.response || '⚠️ No response received.');
   } catch (err) {
     aiDiv.classList.remove('loading');
     aiDiv.textContent = '⚠️ Error generating response.';
