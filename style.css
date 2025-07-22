@@ -1,146 +1,77 @@
-/* General Reset */
-* {
+body {
+  background: #0f1117;
+  color: #dfe6f3;
+  font-family: 'Segoe UI', sans-serif;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
 }
 
-/* Body and Background */
-body {
-  background-color: #111111;
-  color: #cbeaff;
-  font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
-  line-height: 1.6;
-  font-size: 16px;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
-}
-
-/* Header */
 .header {
-  background-color: #1a1a1a;
-  color: #ffcc66;
-  text-align: center;
   padding: 20px;
-  font-size: 24px;
-  font-weight: 600;
+  text-align: center;
+  background: #1a1d2d;
   border-bottom: 1px solid #333;
 }
 
-/* Chat history */
-#chat-history {
-  flex: 1;
-  overflow-y: auto;
+.chat-history {
   padding: 20px;
-  background-color: #0f0f0f;
-  scroll-behavior: smooth;
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
-/* Messages */
-.message {
-  margin-bottom: 18px;
-  padding: 10px 15px;
+.user-message,
+.ai-message {
+  padding: 10px;
+  margin-bottom: 10px;
   border-radius: 8px;
-  white-space: pre-wrap;
-  max-width: 95%;
 }
 
-.message.user {
-  background-color: #222;
-  align-self: flex-end;
-  border-left: 3px solid #66ccff;
+.user-message {
+  background: #29304b;
+  text-align: right;
 }
 
-.message.ai {
-  background-color: #1a1a1a;
-  align-self: flex-start;
-  border-left: 3px solid #ffcc66;
+.ai-message {
+  background: #1d2238;
+  text-align: left;
 }
 
-/* Symbol Glossary Highlight */
-.glossary-term {
-  color: #73e0ff;
-  font-weight: 600;
-  cursor: help;
-  border-bottom: 1px dotted #73e0ff;
+.loading::after {
+  content: '...';
+  animation: dots 1s steps(3, end) infinite;
 }
 
-/* Input Bar */
+@keyframes dots {
+  0% { content: ''; }
+  33% { content: '.'; }
+  66% { content: '..'; }
+  100% { content: '...'; }
+}
+
 #input-form {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: #0f1117;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 14px 20px;
-  background-color: #1a1a1a;
+  padding: 15px;
   border-top: 1px solid #333;
 }
 
-#userInput {
-  flex-grow: 1;
-  padding: 10px 14px;
-  font-size: 15px;
-  border: none;
-  border-radius: 6px;
-  background-color: #2a2a2a;
-  color: #fff;
-  outline: none;
-  margin-right: 10px;
-}
 #user-input {
-  width: 80%;
-  padding: 12px;
-  font-size: 16px:
-}
-/* Reflect Button */
-#reflect-button {
-  background-color: #ffcc66;
-  color: #000;
+  flex: 1;
+  padding: 10px;
+  font-size: 16px;
+  background: #1a1d2d;
   border: none;
-  padding: 10px 16px;
-  border-radius: 6px;
-  font-weight: bold;
+  color: #fff;
+}
+
+#reflect-button {
+  background: #4a90e2;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  margin-left: 10px;
   cursor: pointer;
-  transition: background-color 0.2s ease-in-out;
-}
-
-#reflect-button:hover {
-  background-color: #ffd980;
-}
-
-/* Scrollbar Styling */
-#chat-history::-webkit-scrollbar {
-  width: 10px;
-}
-
-#chat-history::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 5px;
-}
-
-#chat-history::-webkit-scrollbar-track {
-  background: #111;
-}
-
-/* Markdown Styling (using marked.js) */
-h1, h2, h3, h4, h5, h6 {
-  color: #ffcc66;
-  margin-bottom: 10px;
-}
-
-strong {
-  color: #cbeaff;
-}
-
-em {
-  color: #ccc;
-}
-
-code {
-  background-color: #222;
-  padding: 2px 6px;
-  border-radius: 4px;
-  color: #66ccff;
-  font-family: monospace;
 }
