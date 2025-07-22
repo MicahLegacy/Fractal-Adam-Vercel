@@ -28,15 +28,15 @@ document.getElementById('reflect-button').addEventListener('click', async () => 
     });
 
     if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(`Server returned ${res.status}: ${errorText}`);
+      const text = await res.text();
+      throw new Error(`Server returned ${res.status}: ${text}`);
     }
 
     const data = await res.json();
     console.log('[DEBUG] Received response:', data);
 
     aiDiv.classList.remove('loading');
-    aiDiv.innerHTML = marked.parse(data.response || '⚠️ No response text.');
+    aiDiv.innerHTML = marked.parse(data.response);
   } catch (err) {
     aiDiv.classList.remove('loading');
     aiDiv.textContent = '⚠️ Error generating response.';
