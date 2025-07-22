@@ -1,8 +1,8 @@
 import OpenAI from 'openai';
-import { extractSymbolsFromInput } from '../../glossary.mjs';
+import { extractSymbolsFromInput } from '../glossary.mjs';
 import { createClient } from '@supabase/supabase-js';
-import { getRelatedScholars } from '../../scholarReferences.mjs';
-import { generateEmbedding, buildFractalPrompt } from '../../openaiHelpers.mjs';
+import { getRelatedScholars } from '../scholarReferences.mjs';
+import { generateEmbedding, buildFractalPrompt } from '../openaiHelpers.mjs';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
