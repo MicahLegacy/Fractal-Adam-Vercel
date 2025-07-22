@@ -7,7 +7,7 @@ dotenv.config();
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-async function generateEmbedding(input) {
+export async function generateEmbedding(inputText) {
   const embeddingResponse = await openai.embeddings.create({
     model: 'text-embedding-3-small',
     input,
@@ -16,7 +16,7 @@ async function generateEmbedding(input) {
   return embeddingResponse.data[0].embedding;
 }
 
-function buildFractalPrompt(userInput, matches) {
+export async function buildFractalPrompt(userInput, matches) {
   const maxContextTokens = 2800;
   let totalTokens = 0;
   let contextChunks = [];
