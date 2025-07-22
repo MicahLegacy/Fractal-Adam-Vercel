@@ -1,12 +1,6 @@
-// public/script.mjs
 document.getElementById('reflect-button').addEventListener('click', async () => {
-  console.log('[DEBUG] Reflect button clicked');
-
   const userInput = document.getElementById('user-input').value;
-  if (!userInput) {
-    console.log('[DEBUG] No input provided');
-    return;
-  }
+  if (!userInput) return;
 
   const chat = document.getElementById('chat');
   const userDiv = document.createElement('div');
@@ -20,8 +14,6 @@ document.getElementById('reflect-button').addEventListener('click', async () => 
   chat.appendChild(aiDiv);
 
   try {
-    console.log('[DEBUG] Sending POST to /api/reflect');
-
     const res = await fetch('/api/reflect', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -34,14 +26,12 @@ document.getElementById('reflect-button').addEventListener('click', async () => 
     }
 
     const data = await res.json();
-    console.log('[DEBUG] Received response:', data);
-
     aiDiv.classList.remove('loading');
     aiDiv.innerHTML = marked.parse(data.response || '⚠️ No response received.');
   } catch (err) {
     aiDiv.classList.remove('loading');
     aiDiv.textContent = '⚠️ Error generating response.';
-    console.error('[ERROR] Reflect error:', err);
+    console.error('[Reflect Error]', err);
   }
 
   document.getElementById('user-input').value = '';
