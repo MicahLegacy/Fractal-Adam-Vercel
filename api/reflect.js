@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { extractSymbolsFromInput } from '../../glossary.mjs';
 import { getRelatedScholars } from '../../scholarReferences.mjs';
-
+import { generateEmbedding, buildFractalPrompt } from '../../openaiHelpers.mjs';
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
