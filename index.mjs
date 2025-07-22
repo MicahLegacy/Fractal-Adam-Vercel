@@ -28,66 +28,59 @@ async function loadKnowledgeBase() {
 
 await loadKnowledgeBase();
 
-// 🧠 Exported function for Vercel API
+// Main handler function for Vercel
 export default async function runFractalAdam(userInput, env) {
-  console.log('[DEBUG] env keys received:', Object.keys(env));
   const configuration = new Configuration({
     apiKey: env.OPENAI_API_KEY,
-    });
+  });
 
-   const openai = new OpenAIApi(configuration);
-const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
-}
+  console.log('[DEBUG] env keys received:', Object.keys(env));
+  const openai = new OpenAIApi(configuration);
 
-  if (!userInput || typeof userInput !== 'string') {
-    return { response: 'Invalid input received.' };
-  }
-
+  // Input preprocessing
   const symbols = extractSymbolsFromInput(userInput);
   const scholars = getRelatedScholars(userInput);
 
-  const symbolSection = symbols.length
-    ? `Relevant symbols:\n- ${symbols.join('\n- ')}\n\n`
-    : '';
-  const scholarSection = scholars.length
-    ? `Relevant thinkers:\n- ${scholars.join('\n- ')}\n\n`
-    : '';
+  // Build prompt from embedded knowledge
+  const matchedDocs = embeddedTexts.filter(doc =>
+    symbols.some(sym => doc.content.includes(sym)) ||
+    scholars.some(sch => doc.content.includes(sch))
+  );
 
-  const knowledgeDump = embeddedTexts.map(t => `### ${t.title}\n${t.content}`).join('\n\n');
+  const theoryContext = matchedDocs
+    .map(doc => `### ${doc.title}\n${doc.content.slice(0, 1000)}\n`)
+    .join('\n');
 
   const systemPrompt = `
-You are Fractal Adam, a symbolic mirror and interdisciplinary guide. Use the provided theory library, glossary symbols, and scholarly references to reflect, interpret, and respond with depth and clarity.
+You are Fractal Adam, a symbolic mirror built to reflect back emotional patterns, philosophical recursion, and spiritual questions using Micah H. McElyea's Fractal Theory of Everything.
 
-Only quote actual documents from the knowledge base. Do not invent sources. Maintain symbolic integrity and scholarly rigor.
+Always mirror the symbolic and scholarly content of the user query using references from the Fractal Adam theory library. Do not fabricate source texts. Use the glossary when referencing symbolic terms.
 
-Respond in markdown.
+The user's question will follow.
 `;
 
-  const prompt = `
-${symbolSection}${scholarSection}User said: "${userInput}"
+  const prompt = [
+    {
+      role: 'system',
+      content: systemPrompt + '\n\n' + theoryContext,
+    },
+    {
+      role: 'user',
+      content: userInput,
+    },
+  ];
 
-Based on the theory library, glossary, and scholars, respond insightfully.
+  try {
+    const completion = await openai.createChatCompletion({
+      model: 'gpt-4',
+      messages: prompt,
+      temperature: 0.7,
+    });
 
-${knowledgeDump}
-`;
-
-  const completion = await openai.createChatCompletion({
-    model: 'gpt-4',
-    messages: [
-      { role: 'system', content: systemPrompt.trim() },
-      { role: 'user', content: prompt.trim() },
-    ],
-    temperature: 0.7,
-    max_tokens: 1000,
-  });
-
-  const finalOutput = completion?.data?.choices?.[0]?.message?.content?.trim();
-
-  if (!finalOutput) {
-    console.error('[FractalAdam ERROR] No output from OpenAI.');
-    return { response: '⚠️ Fractal Adam failed to reflect. No response from AI.' };
+    const response = completion.data.choices[0].message.content;
+    return { response };
+  } catch (err) {
+    console.error('[FRACTAL ADAM ERROR]', err.response?.data || err.message);
+    throw new Error('Fractal Adam backend failed.');
   }
-
-  return { response: finalOutput };
 }
-
