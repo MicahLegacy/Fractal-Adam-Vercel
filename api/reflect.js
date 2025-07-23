@@ -4,9 +4,7 @@ import { getRelatedScholars } from '../lib/scholarReferences.mjs';
 import { generateEmbedding, buildFractalPrompt } from '../lib/openaiHelpers.mjs';
 import { createClient } from '@supabase/supabase-js';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -27,7 +25,7 @@ export default async function handler(req, res) {
     console.log('[Reflect] Generating embedding...');
     const embedding = await generateEmbedding(userInput);
 
-    console.log('[Reflect] Querying Supabase...');
+    console.log('[Reflect] Querying Supabase RPC...');
     const { data: matches, error: matchError } = await supabase.rpc('match_documents', {
       query_embedding: embedding,
       match_threshold: 0.75,
@@ -36,12 +34,13 @@ export default async function handler(req, res) {
 
     if (matchError) {
       console.error('[Supabase Error]', matchError);
-      return res.status(500).json({ error: 'Vector search failed.' });
+      return res.status(500).json({ error: 'Vector search failed', details: matchError });
     }
 
-    console.log('[Reflect] Matches retrieved:', matches?.length || 0);
+    console.log(`[Reflect] Retrieved ${matches?.length || 0} matches`);
 
     const prompt = await buildFractalPrompt(userInput, matches || []);
+    console.log('[Reflect] Prompt built. Requesting completion...');
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -52,8 +51,9 @@ export default async function handler(req, res) {
 
     const response = completion.choices?.[0]?.message?.content?.trim();
     return res.status(200).json({ response: response || 'No response generated.' });
+
   } catch (err) {
-    console.error('[Reflect Error]', err.message || err);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error('[Reflect Error]', err);  // <-- log full error object
+    return res.status(500).json({ error: 'Internal server error', details: err.toString() });
   }
 }
