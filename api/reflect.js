@@ -44,16 +44,23 @@ export default async function handler(req, res) {
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
-      messages: [{ role: 'system', content: prompt }],
+      messages: [
+        { role: 'system', content: prompt },
+        { role: 'user', content: userInput }
+      ],
       temperature: 0.7,
-      max_tokens: 1000,
+      max_tokens: 1200,
     });
 
     const response = completion.choices?.[0]?.message?.content?.trim();
-    return res.status(200).json({ response: response || 'No response generated.' });
+    if (!response) {
+      throw new Error('No response generated from OpenAI');
+    }
+
+    return res.status(200).json({ response });
 
   } catch (err) {
-    console.error('[Reflect Error]', err);  // <-- log full error object
+    console.error('[Reflect Error]', err);
     return res.status(500).json({ error: 'Internal server error', details: err.toString() });
   }
 }
