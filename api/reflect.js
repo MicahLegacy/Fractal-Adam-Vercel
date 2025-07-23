@@ -25,17 +25,12 @@ export default async function handler(req, res) {
     console.log('[Reflect] Generating embedding...');
     const embedding = await generateEmbedding(userInput);
 
-    console.log('[Reflect] Querying Supabase vector table...');
-    const { data: matches, error: matchError } = await supabase
-      .from('fractal_knowledge')
-      .select('content, metadata, embedding, id')
-      .limit(12)
-      .order('embedding', {
-        ascending: false,
-        foreignTable: 'embedding',
-        referencedColumn: 'embedding',
-        queryVector: embedding,
-      });
+    console.log('[Reflect] Querying Supabase...');
+    const { data: matches, error: matchError } = await supabase.rpc('match_documents', {
+      query_embedding: embedding,
+      match_threshold: 0.75,
+      match_count: 12
+    });
 
     if (matchError) {
       console.error('[Supabase Error]', matchError);
