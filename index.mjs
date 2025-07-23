@@ -1,5 +1,5 @@
 // index.mjs
-import { extractSymbolsFromInput } from './glossary.mjs';
+import { extractSymbolsFromInput, getSymbolDetails } from './glossary.mjs';
 import { getRelatedScholars } from './scholarReferences.mjs';
 
 export default async function runFractalAdam(userInput) {
@@ -9,14 +9,29 @@ export default async function runFractalAdam(userInput) {
   let symbolicNotes = '';
 
   if (symbols.length) {
-    symbolicNotes += `**Symbols identified:** ${symbols.join(', ')}\n\n`;
+    symbolicNotes += '**Symbols identified:**\n';
+    for (const sym of symbols) {
+      const details = getSymbolDetails(sym);
+      if (details) {
+        symbolicNotes += `- **${sym}** — Meaning: ${details.meaning}; Shadow: ${details.shadow}; Function: ${details.function}\n`;
+      } else {
+        symbolicNotes += `- **${sym}**\n`;
+      }
+    }
+    symbolicNotes += '\n';
   }
 
   if (scholars.length) {
-    symbolicNotes += `**Related scholars:** ${scholars.join(', ')}\n\n`;
+    symbolicNotes += '**Related scholars:**\n';
+    for (const scholar of scholars) {
+      symbolicNotes += `- ${scholar.name}\n`;
+    }
+    symbolicNotes += '\n';
   }
 
   return {
     symbolicNotes,
+    symbols,
+    scholars,
   };
 }
