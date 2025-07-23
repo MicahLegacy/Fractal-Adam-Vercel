@@ -1,8 +1,9 @@
 document.getElementById('reflect-button').addEventListener('click', async () => {
   const userInput = document.getElementById('user-input').value;
-  if (!userInput) return;
+  if (!userInput.trim()) return;
 
   const chat = document.getElementById('chat');
+
   const userDiv = document.createElement('div');
   userDiv.className = 'user-message';
   userDiv.textContent = userInput;
@@ -12,6 +13,8 @@ document.getElementById('reflect-button').addEventListener('click', async () => 
   aiDiv.className = 'ai-message loading';
   aiDiv.textContent = 'Thinking...';
   chat.appendChild(aiDiv);
+
+  chat.scrollTop = chat.scrollHeight;
 
   try {
     const res = await fetch('/api/reflect', {
@@ -28,6 +31,8 @@ document.getElementById('reflect-button').addEventListener('click', async () => 
     const data = await res.json();
     aiDiv.classList.remove('loading');
     aiDiv.innerHTML = marked.parse(data.response || '⚠️ No response received.');
+
+    // Optional: Fade-in animation or typing effect could be added here
   } catch (err) {
     aiDiv.classList.remove('loading');
     aiDiv.textContent = '⚠️ Error generating response.';
