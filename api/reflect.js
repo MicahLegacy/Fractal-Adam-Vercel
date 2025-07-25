@@ -1,66 +1,67 @@
-import { generateEmbedding, buildFractalPrompt } from '../../openaiHelpers.mjs';
 import { createClient } from '@supabase/supabase-js';
+import OpenAI from 'openai';
+import { generateEmbedding, buildFractalPrompt } from '../../lib/openaiHelpers.mjs';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// Number of match chunks to pull for context
+const TOP_K_MATCHES = 12;
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { userInput } = req.body;
-
   try {
-    // Generate embedding for the user input
-    const userEmbedding = await generateEmbedding(userInput);
+    const { userInput } = req.body;
 
-    // Query Supabase for top theory document matches
+    if (!userInput || typeof userInput !== 'string') {
+      return res.status(400).json({ error: 'Invalid user input' });
+    }
+
+    // Step 1: Embed the user input
+    const embedding = await generateEmbedding(userInput);
+
+    // Step 2: Query Supabase for matching theory chunks
     const { data: matches, error: matchError } = await supabase.rpc('match_theory_chunks', {
-      query_embedding: userEmbedding,
-      match_threshold: 0.78,        // Adjust as needed
-      match_count: 12               // Pull more for quote variety
+      query_embedding: embedding,
+      match_threshold: 0.75,
+      match_count: TOP_K_MATCHES
     });
 
     if (matchError) {
-      console.error('[Supabase match_theory_chunks Error]', matchError);
-      return res.status(500).json({ error: 'Failed to retrieve document matches.' });
+      console.error('[Supabase Error]', matchError);
+      return res.status(500).json({ error: 'Failed to match documents from Supabase' });
     }
 
-    // Build final prompt using dual-core engine
-    const finalPrompt = await buildFractalPrompt(userInput, matches);
+    // Step 3: Build the symbolic + academic dual-core prompt
+    const prompt = await buildFractalPrompt(userInput, matches);
 
-    // Send prompt to OpenAI for final symbolic response
-    const completionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          { role: 'system', content: 'You are Fractal Adam, a symbolic and scholarly mirror of recursive insight.' },
-          { role: 'user', content: finalPrompt }
-        ],
-        temperature: 0.7
-      })
+    // Step 4: Call OpenAI with the built prompt
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        { role: 'system', content: prompt },
+        { role: 'user', content: userInput }
+      ],
+      temperature: 0.7,
+      max_tokens: 1200
     });
 
-    if (!completionResponse.ok) {
-      const errorText = await completionResponse.text();
-      console.error('[OpenAI Error]', errorText);
-      return res.status(500).json({ error: 'OpenAI API call failed.' });
-    }
+    const aiResponse = completion.choices[0].message.content;
 
-    const completionData = await completionResponse.json();
-    const aiResponse = completionData.choices[0]?.message?.content;
-
+    // Return the response to frontend
     return res.status(200).json({ result: aiResponse });
-  } catch (err) {
-    console.error('[Reflect Handler Error]', err);
-    return res.status(500).json({ error: 'Internal server error.' });
+  } catch (error) {
+    console.error('[Reflect Error]', error);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
