@@ -40,7 +40,7 @@ export default async function handler(req, res) {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o',
         messages: [
           { role: 'system', content: 'You are Fractal Adam, a symbolic and scholarly mirror of recursive insight.' },
           { role: 'user', content: finalPrompt }
