@@ -1,11 +1,10 @@
+// reflect.js (Vercel serverless function)
+
+import { generateEmbedding, buildFractalPrompt } from '../../openaiHelpers.mjs';
 import OpenAI from 'openai';
-import { extractSymbolsFromInput } from '../lib/glossary.mjs';
-import { getRelatedScholars } from '../lib/scholarReferences.mjs';
-import { generateEmbedding, buildFractalPrompt } from '../lib/openaiHelpers.mjs';
 import { createClient } from '@supabase/supabase-js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -13,54 +12,50 @@ const supabase = createClient(
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const userInput = req.body?.userInput;
-  if (!userInput || typeof userInput !== 'string') {
-    return res.status(400).json({ error: 'Missing or invalid input' });
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
   try {
-    console.log('[Reflect] Generating embedding...');
+    const { userInput } = req.body;
+
+    if (!userInput || userInput.trim().length === 0) {
+      return res.status(400).json({ error: 'No user input provided.' });
+    }
+
+    // Step 1: Generate embedding
     const embedding = await generateEmbedding(userInput);
 
-    console.log('[Reflect] Querying Supabase RPC...');
-    const { data: matches, error: matchError } = await supabase.rpc('match_documents', {
+    // Step 2: Query Supabase for top matching chunks
+    const { data: matches, error } = await supabase.rpc('match_theory_chunks', {
       query_embedding: embedding,
       match_threshold: 0.75,
-      match_count: 12,
+      match_count: 12
     });
 
-    if (matchError) {
-      console.error('[Supabase Error]', matchError);
-      return res.status(500).json({ error: 'Vector search failed', details: matchError });
+    if (error) {
+      console.error('[Supabase Match Error]', error);
+      return res.status(500).json({ error: 'Failed to retrieve theory matches.' });
     }
 
-    console.log(`[Reflect] Retrieved ${matches?.length || 0} matches`);
+    // Step 3: Build full prompt from user input and matches
+    const finalPrompt = await buildFractalPrompt(userInput, matches);
 
-    const prompt = await buildFractalPrompt(userInput, matches || []);
-    console.log('[Reflect] Prompt built. Requesting completion...');
-
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: prompt },
-        { role: 'user', content: userInput }
-      ],
+    // Step 4: Get OpenAI chat completion
+    const chatResponse = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [{ role: 'user', content: finalPrompt }],
       temperature: 0.7,
-      max_tokens: 1200,
+      max_tokens: 1400
     });
 
-    const response = completion.choices?.[0]?.message?.content?.trim();
-    if (!response) {
-      throw new Error('No response generated from OpenAI');
+    const completion = chatResponse.choices?.[0]?.message?.content;
+    if (!completion) {
+      return res.status(500).json({ error: 'No completion received from OpenAI.' });
     }
 
-    return res.status(200).json({ response });
-
+    return res.status(200).json({ result: completion });
   } catch (err) {
     console.error('[Reflect Error]', err);
-    return res.status(500).json({ error: 'Internal server error', details: err.toString() });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
