@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
-import { generateEmbedding, buildFractalPrompt } from '../../lib/openaiHelpers.mjs';
+import { generateEmbedding, buildFractalPrompt } from '../lib/openaiHelpers.mjs';
 import dotenv from 'dotenv';
 
 dotenv.config();
