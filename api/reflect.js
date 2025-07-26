@@ -1,64 +1,45 @@
-\// File: /api/reflect.js
-import { NextResponse } from 'next/server';
+// /api/reflect.js
 import { createClient } from '@supabase/supabase-js';
 import { generateEmbedding, buildFractalPrompt } from '../../openaiHelpers.mjs';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
-export async function POST(req) {
+export const config = {
+  runtime: 'edge',
+};
+
+export default async function handler(req) {
   try {
-    const { userInput } = await req.json();
-
-    if (!userInput || userInput.trim() === '') {
-      return NextResponse.json({ error: 'Missing user input.' }, { status: 400 });
+    if (req.method !== 'POST') {
+      return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
     }
 
-    // Step 1: Embed the input
+    const { userInput } = await req.json();
+
+    if (!userInput || typeof userInput !== 'string') {
+      return new Response(JSON.stringify({ error: 'Invalid input' }), { status: 400 });
+    }
+
     const embedding = await generateEmbedding(userInput);
 
-    // Step 2: Perform vector search on theory_chunks
-    const { data: matches, error: matchError } = await supabase.rpc('match_theory_chunks', {
+    const { data: matches, error } = await supabase.rpc('match_documents', {
       query_embedding: embedding,
       match_threshold: 0.75,
       match_count: 12
     });
 
-    if (matchError) {
-      console.error('[Supabase Error]', matchError);
-      return NextResponse.json({ error: 'Failed to fetch matching theory chunks.' }, { status: 500 });
+    if (error) {
+      return new Response(JSON.stringify({ error: 'Match retrieval failed', details: error.message }), { status: 500 });
     }
 
-    // Step 3: Build the symbolic + scholarly prompt
-    const fullPrompt = await buildFractalPrompt(userInput, matches);
+    const prompt = await buildFractalPrompt(userInput, matches || []);
 
-    // Step 4: Send prompt to OpenAI
-    const completion = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [{ role: 'user', content: fullPrompt }],
-        temperature: 0.7
-      })
+    return new Response(JSON.stringify({ prompt }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
     });
 
-    const completionData = await completion.json();
-
-    if (!completion.ok || !completionData.choices) {
-      console.error('[OpenAI Error]', completionData);
-      return NextResponse.json({ error: 'OpenAI response failed.' }, { status: 500 });
-    }
-
-    const responseText = completionData.choices[0].message.content.trim();
-    return NextResponse.json({ response: responseText }, { status: 200 });
   } catch (err) {
-    console.error('[Reflect.js Uncaught Error]', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return new Response(JSON.stringify({ error: 'Server error', details: err.message }), { status: 500 });
   }
 }
