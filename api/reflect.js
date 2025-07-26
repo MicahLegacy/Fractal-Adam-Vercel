@@ -1,4 +1,4 @@
-reflect.js import OpenAI from 'openai';
+import OpenAI from 'openai';
 import { extractSymbolsFromInput } from '../lib/glossary.mjs';
 import { getRelatedScholars } from '../lib/scholarReferences.mjs';
 import { generateEmbedding, buildFractalPrompt } from '../lib/openaiHelpers.mjs';
