@@ -1,4 +1,3 @@
-// embedTheoryChunks.mjs
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
@@ -15,78 +14,66 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Directory with chunked theory .txt files
-const theoryDir = './fractal_adam_texts'; // Update this if using a different folder
+// Path to unzipped theory chunks folder
+const CHUNKS_DIR = './theory_chunks';
 
-function chunkText(text, maxTokens = 500) {
-  const words = text.split(/\s+/);
-  const chunks = [];
-  for (let i = 0; i < words.length; i += maxTokens) {
-    const chunk = words.slice(i, i + maxTokens).join(' ');
-    if (chunk.length > 0) chunks.push(chunk);
-  }
-  return chunks;
+async function generateEmbedding(text) {
+  const res = await openai.embeddings.create({
+    model: 'text-embedding-ada-002',
+    input: text
+  });
+  return res.data[0].embedding;
 }
 
-function matchUUIDFromFilename(filename) {
-  const clean = filename.toLowerCase().replace('.txt', '');
-  for (const [uuid, meta] of Object.entries(theoryDocumentsMeta)) {
-    const title = meta.title.toLowerCase();
-    if (clean.includes(title.split(' ')[0])) return { uuid, title: meta.title };
-  }
-  return null;
+// Helper to extract base title from filename
+function extractBaseTitle(filename) {
+  return filename
+    .replace(/ pt \d+\.txt$/, '')   // Remove " pt X.txt"
+    .replace(/\.txt$/, '')          // Remove ".txt"
+    .trim();
 }
 
-async function embedAndUpload() {
-  const files = fs.readdirSync(theoryDir).filter(file => file.endsWith('.txt'));
+async function embedAndInsertAll() {
+  const files = fs.readdirSync(CHUNKS_DIR);
+  let count = 0;
 
   for (const file of files) {
-    const fullPath = path.join(theoryDir, file);
-    const rawText = fs.readFileSync(fullPath, 'utf-8').trim();
+    const fullPath = path.join(CHUNKS_DIR, file);
+    const text = fs.readFileSync(fullPath, 'utf-8').trim();
 
-    if (!rawText) continue;
-
-    const match = matchUUIDFromFilename(file);
-    if (!match) {
-      console.warn(`⚠️ Skipping: No UUID match found for "${file}"`);
+    if (!text) {
+      console.warn(`[SKIP] Empty or unreadable: ${file}`);
       continue;
     }
 
-    const chunks = chunkText(rawText, 500);
-    console.log(`📄 ${file}: ${chunks.length} chunks`);
+    const baseTitle = extractBaseTitle(file);
+    const entry = Object.entries(theoryDocumentsMeta).find(([, meta]) =>
+      meta.title.toLowerCase().startsWith(baseTitle.toLowerCase())
+    );
 
-    for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i];
+    if (!entry) {
+      console.warn(`[SKIP] No match for: ${file}`);
+      continue;
+    }
 
-      try {
-        const embeddingResponse = await openai.embeddings.create({
-          model: 'text-embedding-ada-002',
-          input: chunk,
-        });
+    const [doc_id, { title }] = entry;
+    const embedding = await generateEmbedding(text);
 
-        const [{ embedding }] = embeddingResponse.data;
+    const { error } = await supabase.from('documents').insert({
+      doc_id,
+      chunk: text,
+      embedding
+    });
 
-        const { error } = await supabase.from('theory_documents').insert({
-          doc_id: match.uuid,
-          title: match.title,
-          chunk_index: i,
-          content: chunk,
-          embedding,
-        });
-
-        if (error) {
-          console.error('❌ Supabase insert error:', error);
-        } else {
-          console.log(`✅ Uploaded chunk ${i} from "${file}"`);
-        }
-
-      } catch (err) {
-        console.error('❌ Embedding error:', err.message);
-      }
+    if (error) {
+      console.error(`[FAIL] ${file}:`, error);
+    } else {
+      count++;
+      console.log(`[OK] Inserted "${file}" into "${title}"`);
     }
   }
 
-  console.log('✅ Embedding and upload complete.');
+  console.log(`\n✅ Total inserted: ${count}`);
 }
 
-embedAndUpload();
+embedAndInsertAll();
