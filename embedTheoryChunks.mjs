@@ -42,7 +42,7 @@ async function run() {
       continue;
     }
 
-    const baseName = file.replace(/_pt\d+\.txt$/, '.txt'); // normalize to map key
+    const baseName = file.trim();
     const doc_id = filenameToUUIDMap[baseName];
 
     if (!doc_id) {
