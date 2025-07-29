@@ -1,4 +1,3 @@
-// reflect.js — Synced with upgraded openaiHelpers.mjs
 import OpenAI from 'openai';
 import { extractSymbolsFromInput } from '../lib/glossary.mjs';
 import { getRelatedScholars } from '../lib/scholarReferences.mjs';
@@ -26,7 +25,7 @@ export default async function handler(req, res) {
     console.log('[Reflect] Generating embedding...');
     const embedding = await generateEmbedding(userInput);
 
-    console.log('[Reflect] Querying Supabase RPC for vector match...');
+    console.log('[Reflect] Querying Supabase for theory match chunks...');
     const { data: matches, error: matchError } = await supabase.rpc('match_documents', {
       query_embedding: embedding,
       match_threshold: 0.75,
@@ -38,36 +37,20 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Vector search failed', details: matchError });
     }
 
-    console.log(`[Reflect] Retrieved ${matches?.length || 0} matches`);
+    console.log(`[Reflect] Retrieved ${matches?.length || 0} theory matches`);
 
-    console.log('[Reflect] Building Fractal Prompt...');
     const prompt = await buildFractalPrompt(userInput, matches || []);
+    console.log('[Reflect] Prompt built. Requesting GPT-4o response...');
 
-    // Optionally log parsed features for dev debugging
-    const debugSymbols = extractSymbolsFromInput(userInput);
-    const debugScholars = getRelatedScholars(userInput);
-    console.log('[Reflect] Extracted Symbols:', debugSymbols);
-    console.log('[Reflect] Related Scholars:', debugScholars.map(s => s.name));
-
-    console.log('[Reflect] Requesting completion from OpenAI...');
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [{ role: 'system', content: prompt }],
       temperature: 0.7,
-      max_tokens: 1000,
+      max_tokens: 1500,
     });
 
     const response = completion.choices?.[0]?.message?.content?.trim();
-    console.log('[Reflect] Completion received.');
-
-    return res.status(200).json({
-      response: response || 'No response generated.',
-      debug: {
-        symbolCount: debugSymbols.length,
-        scholarCount: debugScholars.length,
-        matchCount: matches.length
-      }
-    });
+    return res.status(200).json({ response: response || 'No response generated.' });
 
   } catch (err) {
     console.error('[Reflect Error]', err);
