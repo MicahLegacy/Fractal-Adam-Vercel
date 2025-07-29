@@ -25,11 +25,11 @@ export default async function handler(req, res) {
     console.log('[Reflect] Generating embedding...');
     const embedding = await generateEmbedding(userInput);
 
-    console.log('[Reflect] Querying Supabase for theory match chunks...');
+    console.log('[Reflect] Querying Supabase match_documents...');
     const { data: matches, error: matchError } = await supabase.rpc('match_documents', {
       query_embedding: embedding,
       match_threshold: 0.75,
-      match_count: 12,
+      match_count: 12
     });
 
     if (matchError) {
@@ -37,16 +37,18 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Vector search failed', details: matchError });
     }
 
-    console.log(`[Reflect] Retrieved ${matches?.length || 0} theory matches`);
+    console.log(`[Reflect] Retrieved ${matches?.length || 0} matches.`);
 
     const prompt = await buildFractalPrompt(userInput, matches || []);
-    console.log('[Reflect] Prompt built. Requesting GPT-4o response...');
+    console.log('[Reflect] Prompt constructed. Requesting OpenAI completion...');
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
-      messages: [{ role: 'system', content: prompt }],
+      messages: [
+        { role: 'system', content: prompt }
+      ],
       temperature: 0.7,
-      max_tokens: 1500,
+      max_tokens: 1200
     });
 
     const response = completion.choices?.[0]?.message?.content?.trim();
