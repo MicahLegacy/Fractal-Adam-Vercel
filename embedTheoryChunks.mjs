@@ -14,7 +14,7 @@ const theoryDir = './Fractal_Adam_Full_Knowledge_Base';
 const mappingPath = './theory_chunk_doc_map.json';
 const targetTable = 'fractal_theory_chunks';
 const model = 'text-embedding-ada-002';
-const CHUNK_MIN_LENGTH = 50;  // skip chunks shorter than this
+const CHUNK_MIN_LENGTH = 50;
 
 // === LOAD MAPPING ===
 const rawMap = fs.readFileSync(mappingPath, 'utf-8');
@@ -42,11 +42,11 @@ async function run() {
       continue;
     }
 
-    const baseName = file.trim();
+    const baseName = file.trim();  // FIXED: exact match against JSON keys
     const doc_id = filenameToUUIDMap[baseName];
 
     if (!doc_id) {
-      console.warn(`No doc_id found for file: ${file}`);
+      console.warn(`❌ No doc_id found for file: "${file}"`);
       continue;
     }
 
@@ -61,7 +61,7 @@ async function run() {
       if (error) {
         console.error(`[Supabase Error] ${file}`, error);
       } else {
-        console.log(`[Success] Uploaded: ${file}`);
+        console.log(`[✅ Success] Uploaded: ${file}`);
       }
 
     } catch (err) {
