@@ -1,5 +1,3 @@
-// reflect.js – Tier 3.7 Production Version
-
 import OpenAI from 'openai';
 import { extractSymbolsFromInput } from '../lib/glossary.mjs';
 import { getRelatedScholars } from '../lib/scholarReferences.mjs';
@@ -42,11 +40,10 @@ export default async function handler(req, res) {
       model: 'gpt-4o',
       messages: [{ role: 'system', content: prompt }],
       temperature: 0.7,
-      max_tokens: 1200,
+      max_tokens: 1000,
     });
 
     const response = completion.choices?.[0]?.message?.content?.trim();
-
     return res.status(200).json({ response: response || 'No response generated.' });
 
   } catch (err) {
