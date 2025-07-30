@@ -22,10 +22,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('[Reflect] 🔍 Generating embedding...');
+    console.log('[Reflect] 🧠 Generating embedding...');
     const embedding = await generateEmbedding(userInput);
 
-    console.log('[Reflect] 📚 Querying Supabase vector search...');
+    console.log('[Reflect] 🔍 Querying Supabase vector search...');
     const { data: matches, error: matchError } = await supabase.rpc('match_documents', {
       query_embedding: embedding,
       match_threshold: 0.75,
@@ -37,23 +37,29 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Vector search failed', details: matchError });
     }
 
-    console.log(`[Reflect] 📎 Retrieved ${matches?.length || 0} matches.`);
+    console.log(`[Reflect] ✅ Retrieved ${matches?.length || 0} matches`);
+
+    // Debug: Extract key reflection dimensions
+    const extractedSymbols = extractSymbolsFromInput(userInput);
+    const scholars = getRelatedScholars(userInput).map(s => s.name);
+    console.log('[Reflect] 🧩 Symbols Detected:', extractedSymbols);
+    console.log('[Reflect] 👤 Related Scholars:', scholars);
 
     const prompt = await buildFractalPrompt(userInput, matches || []);
-    console.log('[Reflect] 🧠 Prompt built. Requesting OpenAI completion...');
+    console.log('[Reflect] 🧬 Prompt built. Requesting GPT-4o completion...');
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [{ role: 'system', content: prompt }],
-      temperature: 0.65,
-      max_tokens: 1200,
+      temperature: 0.7,
+      max_tokens: 1000,
     });
 
     const response = completion.choices?.[0]?.message?.content?.trim();
     return res.status(200).json({ response: response || 'No response generated.' });
 
   } catch (err) {
-    console.error('[Reflect Error]', err);
+    console.error('[Reflect Error]', JSON.stringify(err, null, 2));
     return res.status(500).json({ error: 'Internal server error', details: err.toString() });
   }
 }
