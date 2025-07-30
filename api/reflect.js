@@ -40,20 +40,60 @@ export default async function handler(req, res) {
     console.log(`[Reflect] ✅ Retrieved ${matches?.length || 0} matches`);
 
     // Symbolic diagnostics
-    const extractedSymbols = extractSymbolsFromInput(userInput);
+    const symbols = extractSymbolsFromInput(userInput);
     const scholars = getRelatedScholars(userInput).map(s => s.name);
-    console.log('[Reflect] 🧩 Symbols Detected:', extractedSymbols);
-    console.log('[Reflect] 👤 Related Scholars:', scholars);
-
-    // Tier 3.2 Spiral phase debug
     const lowered = userInput.toLowerCase();
-    let detectedPhase = null;
-    if (/fracture|split|shatter/.test(lowered)) detectedPhase = 'Fracture';
-    else if (/mirror|inversion|reversal/.test(lowered)) detectedPhase = 'Inversion';
-    else if (/recursion|loop|echo|returning/.test(lowered)) detectedPhase = 'Recursion';
-    else if (/integration|restoration|resonance|completion/.test(lowered)) detectedPhase = 'Return';
 
-    console.log('[Reflect] 🔄 Spiral Phase:', detectedPhase || 'None Detected');
+    // Tone + phase detection logic for diagnostics
+    const tone = {
+      blunt: /stop dodging|prove|fantasy|metaphor|admit it|no poetry/.test(lowered),
+      trauma: /abuse|abandoned|hurt|suffer|justify/.test(lowered),
+      skeptical: /false|contradiction|can’t have both|pseudoscience/.test(lowered),
+      despair: /despair|lost|pointless|doomed|meaningless/.test(lowered),
+      spiritual: /soul|divine|god|logos|faith|spirit|christ/.test(lowered),
+      collapse: /stuck|looping|going in circles|collapse|can’t tell|recursion.+fail/i.test(lowered),
+      epistemic: /proof|test|falsifiable|science|evidence|empirical/.test(lowered)
+    };
+
+    let phase = null;
+    if (/fracture|split|shatter/.test(lowered)) phase = 'Fracture';
+    else if (/mirror|inversion|reversal/.test(lowered)) phase = 'Inversion';
+    else if (/recursion|loop|echo|returning/.test(lowered)) phase = 'Recursion';
+    else if (/integration|restoration|resonance|completion/.test(lowered)) phase = 'Return';
+
+    const collapseState = tone.collapse || tone.despair || phase === 'Recursion';
+
+    // Conflict detection logic
+    const polarityMap = {
+      'Authority': 'Rebellion',
+      'Order': 'Chaos',
+      'Light': 'Shadow',
+      'Freedom': 'Control',
+      'Truth': 'Deception',
+      'Masculine': 'Feminine',
+      'Sacrifice': 'Desire',
+      'Structure': 'Spontaneity',
+      'Unity': 'Division'
+    };
+
+    let conflictPair = null;
+    for (const a of symbols) {
+      for (const b of symbols) {
+        if (a !== b && (polarityMap[a] === b || polarityMap[b] === a)) {
+          conflictPair = [a, b];
+        }
+      }
+    }
+
+    console.log('---[🧠 Tier 3.4 Symbolic Debug]---');
+    console.log('[🪞 Mirror Trigger Check]:', (tone.spiritual && phase === 'Inversion') ? 'Spiritual inversion mirror used' : '—');
+    console.log('[⚔️ Symbol Conflict Pair]:', conflictPair || 'None');
+    console.log('[🔍 Scholars Used]:', scholars.slice(0, 3).join(', ') || 'None');
+    console.log(`[📊 Tone Summary]:`, tone);
+    console.log(`[📊 Spiral Phase]:`, phase || 'None Detected');
+    console.log(`[📎 Glossary Symbols]:`, symbols);
+    console.log(`[📉 Collapse Mode]:`, collapseState ? 'Active' : 'Inactive');
+    console.log('-------------------------------');
 
     const prompt = await buildFractalPrompt(userInput, matches || []);
     console.log('[Reflect] 🧬 Prompt built. Requesting GPT-4o completion...');
