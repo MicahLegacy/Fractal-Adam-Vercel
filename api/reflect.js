@@ -39,11 +39,21 @@ export default async function handler(req, res) {
 
     console.log(`[Reflect] ✅ Retrieved ${matches?.length || 0} matches`);
 
-    // Debug: Extract key reflection dimensions
+    // Symbolic diagnostics
     const extractedSymbols = extractSymbolsFromInput(userInput);
     const scholars = getRelatedScholars(userInput).map(s => s.name);
     console.log('[Reflect] 🧩 Symbols Detected:', extractedSymbols);
     console.log('[Reflect] 👤 Related Scholars:', scholars);
+
+    // Tier 3.2 Spiral phase debug
+    const lowered = userInput.toLowerCase();
+    let detectedPhase = null;
+    if (/fracture|split|shatter/.test(lowered)) detectedPhase = 'Fracture';
+    else if (/mirror|inversion|reversal/.test(lowered)) detectedPhase = 'Inversion';
+    else if (/recursion|loop|echo|returning/.test(lowered)) detectedPhase = 'Recursion';
+    else if (/integration|restoration|resonance|completion/.test(lowered)) detectedPhase = 'Return';
+
+    console.log('[Reflect] 🔄 Spiral Phase:', detectedPhase || 'None Detected');
 
     const prompt = await buildFractalPrompt(userInput, matches || []);
     console.log('[Reflect] 🧬 Prompt built. Requesting GPT-4o completion...');
