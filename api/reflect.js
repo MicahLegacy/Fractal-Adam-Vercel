@@ -1,3 +1,5 @@
+// Tier 3.7 Reflect.js for Fractal Adam
+
 import OpenAI from 'openai';
 import { extractSymbolsFromInput } from '../lib/glossary.mjs';
 import { getRelatedScholars } from '../lib/scholarReferences.mjs';
@@ -44,7 +46,9 @@ export default async function handler(req, res) {
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
-      messages: [{ role: 'system', content: prompt }],
+      messages: [
+        { role: 'system', content: prompt }
+      ],
       temperature: 0.7,
       max_tokens: 1200,
     });
