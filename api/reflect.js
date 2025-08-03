@@ -1,5 +1,3 @@
-// reflect.js — Tier 4.0 Final — Symbolic Dual-Core Integration
-
 import OpenAI from 'openai';
 import { extractSymbolsFromInput } from '../lib/glossary.mjs';
 import { getRelatedScholars } from '../lib/scholarReferences.mjs';
@@ -29,7 +27,7 @@ export default async function handler(req, res) {
     const { data: matches, error: matchError } = await supabase.rpc('match_documents', {
       query_embedding: embedding,
       match_threshold: 0.75,
-      match_count: 12,
+      match_count: 12
     });
 
     if (matchError) {
@@ -42,7 +40,7 @@ export default async function handler(req, res) {
       model: 'gpt-4o',
       messages: [{ role: 'system', content: prompt }],
       temperature: 0.7,
-      max_tokens: 1200
+      max_tokens: 1500
     });
 
     const response = completion.choices?.[0]?.message?.content?.trim();
