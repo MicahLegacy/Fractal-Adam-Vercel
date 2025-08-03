@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import { extractSymbolsFromInput } from '../lib/glossary.mjs';
 import { getRelatedScholars } from '../lib/scholarReferences.mjs';
 import { generateEmbedding, buildFractalPrompt } from '../lib/openaiHelpers.mjs';
-import { fractalSystemPrompt } from '../lib/fractalSystemPrompt.mjs';
+import { systemPrompt } from '../lib/systemPrompt.mjs';
 import { createClient } from '@supabase/supabase-js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
