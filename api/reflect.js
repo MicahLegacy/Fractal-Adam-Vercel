@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import { extractSymbolsFromInput } from '../lib/glossary.mjs';
 import { getRelatedScholars } from '../lib/scholarReferences.mjs';
 import { generateEmbedding, buildFractalPrompt } from '../lib/openaiHelpers.mjs';
-import { systemPrompt } from '../lib/systemPrompt.mjs';
+import { systemPrompt as fractalSystemPrompt } from '../lib/systemPrompt.mjs';
 import { createClient } from '@supabase/supabase-js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -36,12 +36,12 @@ export default async function handler(req, res) {
     }
 
     const prompt = await buildFractalPrompt(userInput, matches || []);
-    console.log('[Prompt]', prompt); // Helpful during testing
+    console.log('[Fractal Prompt]', prompt);
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
-        { role: 'system', content: systemPrompt },
+        { role: 'system', content: fractalSystemPrompt },
         { role: 'user', content: prompt }
       ],
       temperature: 0.7,
