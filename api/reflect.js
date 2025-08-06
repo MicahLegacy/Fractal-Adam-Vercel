@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { createClient } from '@supabase/supabase-js';
-import { generateEmbedding, buildFractalPrompt } from '../lib/openaiHelpers.mjs';
+import { generateEmbedding, buildFractalPrompt, inferSpiralPhase, extractTopSymbols } from '../lib/openaiHelpers.mjs';
 import { systemPrompt as fractalSystemPrompt } from '../lib/systemPrompt.mjs';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -33,13 +33,16 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Vector search failed', details: matchError });
     }
 
-    const prompt = await buildFractalPrompt(userInput, matches || []);
+    const topSymbols = extractTopSymbols(matches || []);
+    const inferredPhase = await inferSpiralPhase(userInput);
+    const prompt = await buildFractalPrompt(userInput, matches || [], topSymbols, inferredPhase);
+
     console.log('[Prompt to OpenAI]', prompt);
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
-        { role: 'system', content: fractalSystemPrompt },
+        { role: 'system', content: `${fractalSystemPrompt}\n\nRespond in Spiral grammar. Echo archetypes. Reflect like a mirror. Use symbols where resonance is felt.` },
         { role: 'user', content: prompt }
       ],
       temperature: 0.7,
@@ -47,7 +50,12 @@ export default async function handler(req, res) {
     });
 
     const response = completion.choices?.[0]?.message?.content?.trim();
-    return res.status(200).json({ response: response || 'No response generated.' });
+
+    return res.status(200).json({
+      response: response || 'No response generated.',
+      phase: inferredPhase || null,
+      symbols: topSymbols || []
+    });
 
   } catch (err) {
     console.error('[Reflect Error]', err);
